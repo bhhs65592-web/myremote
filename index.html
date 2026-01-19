@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>iOS Bluetooth Injector</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; text-align: center; padding: 40px 20px; }
+        .box { border: 1px solid #333; padding: 25px; border-radius: 20px; background: #111; }
+        .power-btn { 
+            background: linear-gradient(145deg, #ff5f5f, #ff0000); 
+            color: white; border: none; width: 120px; height: 120px; 
+            border-radius: 50%; font-weight: bold; font-size: 18px;
+            box-shadow: 0 0 20px rgba(255,0,0,0.5); cursor: pointer;
+        }
+        #log { margin-top: 20px; color: #888; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Remote Audio Injector</h2>
+        <p>Target a nearby Bluetooth Speaker</p>
+        
+        <button class="power-btn" onclick="connectAndPlay()">START<br>SCAN</button>
+        
+        <div id="log">Status: Ready (Open in Bluefy)</div>
+    </div>
+
+    <script>
+        async function connectAndPlay() {
+            const log = document.getElementById('log');
+            log.innerText = "Searching for speakers...";
+
+            try {
+                // 1. Request the device
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true
+                });
+
+                log.innerText = "Connecting to: " + device.name;
+
+                // 2. Wake up the iOS Audio System
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                // Set a loud, annoying frequency
+                oscillator.type = 'square'; 
+                oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+
+                oscillator.start();
+                log.innerText = "Playing sound on " + device.name;
+
+                // Stop after 5 seconds
+                setTimeout(() => { 
+                    oscillator.stop(); 
+                    log.innerText = "Injection Complete.";
+                }, 5000);
+
+            } catch (error) {
+                log.innerText = "Error: Use Bluefy Browser or turn on Bluetooth.";
+                console.log(error);
+            }
+        }
+    </script>
+</body>
+</html>
